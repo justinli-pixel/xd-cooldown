@@ -729,8 +729,8 @@ export default function XDCooldown() {
           </div>
         )}
 
-        <main className="flex-1 flex items-center justify-center px-6 py-10 md:px-12 md:py-16 relative z-10">
-          <div className="w-full max-w-3xl relative">
+        <main className={step === 9 ? "flex-1 relative z-10" : "flex-1 flex items-center justify-center px-6 py-10 md:px-12 md:py-16 relative z-10"}>
+          <div className={step === 9 ? "w-full" : "w-full max-w-3xl relative"}>
             {step === 0 && <Welcome onStart={next} />}
             {step === 1 && <NameScreen data={data} update={update} onBack={back} onNext={next} canProceed={canName} />}
             {q && q.type !== 'shoutout' && q.type !== 'capsule' && (
@@ -822,46 +822,66 @@ function Welcome({ onStart }) {
   return (
     <div className="relative" style={{ animation: 'slamIn 700ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6" style={{ background: INK, color: BONE, fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+
+        {/* Label */}
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-10"
+          style={{ background: INK, color: BONE, fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', letterSpacing: '0.24em', textTransform: 'uppercase' }}
+        >
           <span style={{ color: CORAL }}>●</span>
           TY25 Reflections
         </div>
 
-        <h1 className="text-[clamp(40px,7.5vw,88px)] font-extrabold leading-[0.92] tracking-[-0.035em] uppercase" style={{ fontFamily: "'Syne', sans-serif", color: INK }}>
+        {/* Headline — the whole page */}
+        <h1
+          className="font-extrabold uppercase"
+          style={{
+            fontFamily: "'Syne', sans-serif",
+            fontSize: 'clamp(56px, 10vw, 128px)',
+            lineHeight: 0.88,
+            letterSpacing: '-0.04em',
+            color: INK,
+          }}
+        >
           Tax season,
-          {' '}
+          <br />
           <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 500, textTransform: 'lowercase', letterSpacing: '-0.02em', color: CORAL }}>
             actually
           </span>
           {' '}ended.
         </h1>
 
-        <div style={{ animation: 'riseIn 700ms ease-out 250ms both', opacity: 0, animationFillMode: 'forwards' }}>
-          <p className="text-base md:text-lg max-w-md mx-auto mt-5 mb-3 leading-relaxed" style={{ color: SOFT_INK }}>
-            Fifteen minutes to reflect, celebrate, and write a note your future self will receive on January&nbsp;1,&nbsp;2027.
-          </p>
-
-          <p className="text-sm md:text-base max-w-md mx-auto mb-8 leading-relaxed" style={{ color: MUTED, fontFamily: "'Fraunces', serif", fontStyle: 'italic' }}>
-            Just for you. Nothing is saved or shared — your reflections live only on this page until you choose to send them to yourself.
+        {/* Single-line subtext + CTA */}
+        <div style={{ animation: 'riseIn 700ms ease-out 300ms both', opacity: 0, animationFillMode: 'forwards' }}>
+          <p
+            className="mt-8 mb-10"
+            style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 'clamp(18px, 2vw, 24px)', color: SOFT_INK, lineHeight: 1.4 }}
+          >
+            15 minutes. Just for you.
           </p>
 
           <button
             onClick={onStart}
-            className="inline-flex items-center gap-3 px-7 py-3.5 font-semibold transition-all active:scale-[0.98] hover:opacity-90"
-            style={{ background: INK, color: BONE, fontFamily: "'Syne', sans-serif", fontSize: '14px', letterSpacing: '0.04em', borderRadius: '999px', textTransform: 'uppercase' }}
+            className="inline-flex items-center gap-3 transition-all active:scale-[0.98] hover:opacity-90"
+            style={{
+              background: INK,
+              color: BONE,
+              fontFamily: "'Syne', sans-serif",
+              fontSize: '15px',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+              borderRadius: '999px',
+              padding: '16px 36px',
+              border: 'none',
+              cursor: 'pointer',
+            }}
           >
             <span>Begin</span>
             <span style={{ color: CORAL }}>→</span>
           </button>
-
-          <div className="mt-6 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.24em]" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
-            <span>7 questions</span>
-            <span style={{ color: CORAL }}>✦</span>
-            <span>15 min</span>
-            <span style={{ color: CORAL }}>✦</span>
-            <span>Just for you</span>
-          </div>
         </div>
+
       </div>
     </div>
   );
@@ -1137,11 +1157,11 @@ function NavButtons({ onBack, onNext, canProceed, nextLabel = 'Next' }) {
 // ============================================================
 function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvance, onBack, onSaveSlideImage, slideCaptureStatus }) {
   const slides = [
-    <div key="intro" className="text-center px-4">
+    <div key="intro" className="text-center px-6 max-w-5xl mx-auto">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-6" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
         TY25 Reflections presents
       </div>
-      <h2 className="text-[clamp(48px,11vw,140px)] leading-[0.86] tracking-[-0.03em] uppercase font-extrabold" style={{ fontFamily: "'Syne', sans-serif", color: p.ink }}>
+      <h2 className="text-[clamp(40px,9vw,120px)] leading-[0.86] tracking-[-0.03em] uppercase font-extrabold" style={{ fontFamily: "'Syne', sans-serif", color: p.ink }}>
         {firstName}'s
         <br />
         <span style={{ color: p.accent }}>tax season,</span>
@@ -1160,11 +1180,11 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
     <WrappedQuote key="memorable" chapter="02" eyebrow="A moment that stuck" body={data.memorable} p={p} mood={mood} />,
     <WrappedQuote key="lesson" chapter="03" eyebrow="What you learned" body={data.lesson} p={p} mood={mood} />,
 
-    <div key="shoutout" className="text-center max-w-xl mx-auto px-2">
+    <div key="shoutout" className="text-center max-w-3xl mx-auto px-6">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-5" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
         Chapter 04 · Someone to thank
       </div>
-      <h3 className="text-[clamp(44px,11vw,110px)] leading-[0.9] uppercase font-extrabold tracking-[-0.025em] mb-8" style={{ fontFamily: "'Syne', sans-serif", color: p.accent, animation: 'bigPop 700ms cubic-bezier(0.2, 1, 0.3, 1) 150ms both', opacity: 0, animationFillMode: 'forwards' }}>
+      <h3 className="text-[clamp(36px,8vw,96px)] leading-[0.9] uppercase font-extrabold tracking-[-0.025em] mb-8 break-words" style={{ fontFamily: "'Syne', sans-serif", color: p.accent, animation: 'bigPop 700ms cubic-bezier(0.2, 1, 0.3, 1) 150ms both', opacity: 0, animationFillMode: 'forwards' }}>
         {data.shoutoutName}
       </h3>
       <p className="text-xl md:text-2xl leading-relaxed" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: p.ink, animation: 'riseIn 600ms ease-out 500ms both', opacity: 0, animationFillMode: 'forwards' }}>
@@ -1172,7 +1192,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
       </p>
     </div>,
 
-    <div key="wordPast" className="text-center">
+    <div key="wordPast" className="text-center max-w-5xl mx-auto px-6">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-2" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
         Chapter 05 · Word that defined 2026
       </div>
@@ -1184,7 +1204,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
         style={{
           fontFamily: "'Syne', sans-serif",
           color: p.accent,
-          fontSize: 'clamp(4rem, 17vw, 11rem)',
+          fontSize: 'clamp(3.5rem, 11vw, 9rem)',
           animation: 'bigPop 800ms cubic-bezier(0.2, 1, 0.3, 1) 200ms both',
           opacity: 0,
           animationFillMode: 'forwards',
@@ -1194,7 +1214,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
       </div>
     </div>,
 
-    <div key="word" className="text-center">
+    <div key="word" className="text-center max-w-5xl mx-auto px-6">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-2" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
         Chapter 06 · Word for 2027
       </div>
@@ -1206,7 +1226,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
         style={{
           fontFamily: "'Syne', sans-serif",
           color: p.accent,
-          fontSize: 'clamp(4rem, 17vw, 11rem)',
+          fontSize: 'clamp(3.5rem, 11vw, 9rem)',
           animation: 'bigPop 800ms cubic-bezier(0.2, 1, 0.3, 1) 200ms both',
           opacity: 0,
           animationFillMode: 'forwards',
@@ -1216,7 +1236,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
       </div>
     </div>,
 
-    <div key="capsule" className="max-w-xl mx-auto px-2">
+    <div key="capsule" className="max-w-2xl mx-auto px-6">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-6 text-center" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
         A letter to January 1, 2027
       </div>
@@ -1338,7 +1358,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
 
 function WrappedQuote({ chapter, eyebrow, body, p, mood }) {
   return (
-    <div className="text-center max-w-2xl mx-auto px-4">
+    <div className="text-center max-w-3xl mx-auto px-6">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-6" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
         Chapter {chapter} · {eyebrow}
       </div>
