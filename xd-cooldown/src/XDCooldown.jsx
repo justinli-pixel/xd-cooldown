@@ -10,6 +10,10 @@ const LEMON = '#F5E842';
 const MUTED = '#6A665E';
 const SOFT_INK = '#3A372F';
 
+const BRAND_NAME = 'TY25 Reflections';
+const BRAND_SHORT = 'TY25';
+const SEASON = 'Tax Season 2026';
+
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=Syne:wght@500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');`;
 
 const KEYFRAMES = `
@@ -76,14 +80,24 @@ const STEPS = [
     chapter: '04',
     label: 'Someone to thank',
     question: "Who made this season better? We'll help you tell them.",
-    helper: "You'll get a button at the end that emails your note right to them.",
+    helper: "At the end you'll be able to share your reflections with them in Slack.",
     type: 'shoutout',
   },
   {
-    key: 'word',
+    key: 'wordPast',
     chapter: '05',
-    label: 'One word for 2027',
-    question: "If you could set one intention for next season, what would it be?",
+    label: 'Word that defined 2026',
+    question: "Looking back — what one word captures this season for you?",
+    helper: "A feeling, a theme, a shape of the year. One word only.",
+    placeholder: "messy / brave / building...",
+    maxLen: 20,
+    minLen: 2,
+  },
+  {
+    key: 'word',
+    chapter: '06',
+    label: 'Word for 2027',
+    question: "Looking ahead — one word to set your intention for next season.",
     helper: "A vibe, a mantra, a guiding word. Keep it to one.",
     placeholder: "bold / curious / steady...",
     maxLen: 20,
@@ -91,7 +105,7 @@ const STEPS = [
   },
   {
     key: 'capsule',
-    chapter: '06',
+    chapter: '07',
     label: 'A note to future you',
     question: "Write a letter to your January 2027 self.",
     type: 'capsule',
@@ -172,6 +186,21 @@ const MOOD_DESIGN = {
 // ============================================================
 // CLIPBOARD
 // ============================================================
+// Lazy-load html2canvas from CDN (only when user clicks Download)
+let _html2canvasPromise = null;
+function loadHtml2canvas() {
+  if (window.html2canvas) return Promise.resolve(window.html2canvas);
+  if (_html2canvasPromise) return _html2canvasPromise;
+  _html2canvasPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+    s.onload = () => resolve(window.html2canvas);
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  return _html2canvasPromise;
+}
+
 async function copyToClipboard(text) {
   try {
     if (navigator.clipboard && window.isSecureContext) {
@@ -208,9 +237,11 @@ function buildReplayHTML(data, firstName) {
   const mood1 = detectMood(data.high);
   const mood2 = detectMood(data.memorable);
   const mood3 = detectMood(data.lesson);
-  const mood5Raw = detectMood(data.word);
-  const mood5 = mood5Raw !== 'neutral' ? mood5Raw : 'growth';
-  const mood6 = detectMood(data.capsule);
+  const mood5PRaw = detectMood(data.wordPast);
+  const mood5P = mood5PRaw !== 'neutral' ? mood5PRaw : 'thoughtful';
+  const mood6Raw = detectMood(data.word);
+  const mood6 = mood6Raw !== 'neutral' ? mood6Raw : 'growth';
+  const mood7 = detectMood(data.capsule);
 
   const particleMarkup = (moodName, count = 6) => {
     const palette = MOOD_DESIGN[moodName] || MOOD_DESIGN.neutral;
@@ -233,7 +264,7 @@ function buildReplayHTML(data, firstName) {
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>XD Cooldown — ${escapeHtml(firstName)}'s Tax Season 2026</title>
+<title>TY25 Reflections — ${escapeHtml(firstName)}'s Tax Season 2026</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&family=Syne:wght@500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -444,7 +475,7 @@ html, body { font-family: 'DM Sans', system-ui, sans-serif; color: #0F0F0E; scro
 
 <section class="section hero">
   <div class="inner">
-    <div class="hero-date">XD Cooldown · Tax Season 2026</div>
+    <div class="hero-date">TY25 Reflections · Tax Season 2026</div>
     <h1>${escapeHtml(firstName)}'s<br>tax season,<br><em>wrapped.</em></h1>
     <p class="hero-sub">A peak moment, a memory, a lesson, a thank-you, one word, and a letter — sealed at the end of tax season 2026 for January 1, 2027 you.</p>
   </div>
@@ -489,19 +520,29 @@ html, body { font-family: 'DM Sans', system-ui, sans-serif; color: #0F0F0E; scro
   </div>
 </section>
 
-<section class="section mood-${mood5}">
-  ${particleMarkup(mood5)}
+<section class="section mood-${mood5P}">
+  ${particleMarkup(mood5P)}
   <div class="inner center">
-    <div class="eyebrow">Chapter 05 · Your word for 2027</div>
-    <div class="word-big">${escapeHtml(data.word)}</div>
+    <div class="eyebrow">Chapter 05 · Word that defined 2026</div>
+    <div style="font-family: 'Fraunces', serif; font-style: italic; font-size: 18px; opacity: 0.8; margin-bottom: 16px;">Looking back —</div>
+    <div class="word-big">${escapeHtml(data.wordPast)}</div>
   </div>
 </section>
 
 <section class="section mood-${mood6}">
   ${particleMarkup(mood6)}
+  <div class="inner center">
+    <div class="eyebrow">Chapter 06 · Word for 2027</div>
+    <div style="font-family: 'Fraunces', serif; font-style: italic; font-size: 18px; opacity: 0.8; margin-bottom: 16px;">Looking ahead —</div>
+    <div class="word-big">${escapeHtml(data.word)}</div>
+  </div>
+</section>
+
+<section class="section mood-${mood7}">
+  ${particleMarkup(mood7)}
   <div class="inner">
-    <div class="eyebrow">Chapter 06</div>
-    <div class="chap-num">06</div>
+    <div class="eyebrow">Chapter 07</div>
+    <div class="chap-num">07</div>
     <div class="chap-label">A letter to January 1, 2027</div>
     <div class="letter-card">
       <p class="letter-text">${escapeHtml(data.capsule)}</p>
@@ -514,7 +555,7 @@ html, body { font-family: 'DM Sans', system-ui, sans-serif; color: #0F0F0E; scro
   <div class="inner">
     <h2>That's a wrap,<br><em>${escapeHtml(firstName)}.</em></h2>
     <p>You made it through. Now make it back.</p>
-    <div class="stamp">XD Cooldown · Sealed 2026</div>
+    <div class="stamp">TY25 Reflections · Sealed 2026</div>
   </div>
 </section>
 
@@ -535,7 +576,7 @@ export default function XDCooldown() {
   const [data, setData] = useState({
     name: '', high: '', memorable: '', lesson: '',
     shoutoutName: '', shoutoutEmail: '', shoutoutMessage: '',
-    word: '', capsule: ''
+    wordPast: '', word: '', capsule: ''
   });
 
   const fireConfetti = (dur = 2400) => {
@@ -545,8 +586,8 @@ export default function XDCooldown() {
   };
 
   useEffect(() => {
-    if (step === 8 && wrappedSlide === 0) fireConfetti(2600);
-    if (step === 9) fireConfetti(2400);
+    if (step === 9 && wrappedSlide === 0) fireConfetti(2600);
+    if (step === 10) fireConfetti(2400);
   }, [step, wrappedSlide]);
 
   const update = (k, v) => setData(d => ({ ...d, [k]: v }));
@@ -554,7 +595,7 @@ export default function XDCooldown() {
   const back = () => setStep(s => Math.max(0, s - 1));
 
   const canName = data.name.trim().length > 0;
-  const q = step >= 2 && step <= 7 ? STEPS[step - 2] : null;
+  const q = step >= 2 && step <= 8 ? STEPS[step - 2] : null;
   const canQ = (() => {
     if (!q) return false;
     if (q.type === 'shoutout') return data.shoutoutName.trim().length > 0 && data.shoutoutMessage.trim().length > 3;
@@ -583,7 +624,7 @@ export default function XDCooldown() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `XD-Cooldown-${firstName}-2026.html`;
+    a.download = `TY25-Reflections-${firstName}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -592,11 +633,55 @@ export default function XDCooldown() {
     fireConfetti(1400);
   };
 
-  const slackText = `:sparkles: *My XD Cooldown — Tax Season 2026, Wrapped*\n\n*01 / Peak moment*\n${data.high}\n\n*02 / A moment that stuck*\n${data.memorable}\n\n*03 / What I learned*\n${data.lesson}\n\n*04 / Someone to thank*\n${data.shoutoutName}\n\n*05 / My word for 2027*\n*${(data.word || '').toUpperCase()}*\n\n*06 / A note to my January 2027 self*\n>${(data.capsule || '').split('\n').join('\n>')}`;
+  // Per-slide image download (shoutout, peak moments, etc.)
+  const [slideCaptureStatus, setSlideCaptureStatus] = useState('idle');
+  const saveSlideAsImage = async (slideIdx) => {
+    setSlideCaptureStatus('loading');
+    try {
+      const html2canvas = await loadHtml2canvas();
+      const node = document.getElementById('wrapped-slide-capture');
+      if (!node) throw new Error('slide not found');
+
+      // Compute palette directly so capture matches what's rendered
+      const moodForSlide = getSlideMood(slideIdx, data);
+      const paletteForSlide = MOOD_DESIGN[moodForSlide] || MOOD_DESIGN.neutral;
+
+      const canvas = await html2canvas(node, {
+        backgroundColor: paletteForSlide.bg,
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        ignoreElements: (el) => el.classList && el.classList.contains('wrapped-chrome'),
+      });
+      canvas.toBlob((blob) => {
+        if (!blob) { setSlideCaptureStatus('failed'); setTimeout(() => setSlideCaptureStatus('idle'), 2400); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        // Filename hints what's in the slide
+        const slideNames = ['intro','peak-moment','memorable','lesson','shoutout','word-2026','word-2027','letter'];
+        const tag = slideNames[slideIdx] || `slide-${slideIdx}`;
+        a.download = `TY25-Reflections-${firstName}-${tag}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setSlideCaptureStatus('done');
+        fireConfetti(1400);
+        setTimeout(() => setSlideCaptureStatus('idle'), 2400);
+      }, 'image/png');
+    } catch (e) {
+      console.error(e);
+      setSlideCaptureStatus('failed');
+      setTimeout(() => setSlideCaptureStatus('idle'), 2400);
+    }
+  };
+
+  const slackText = `:sparkles: *My TY25 Reflections — Tax Season 2026, Wrapped*\n\n*01 / Peak moment*\n${data.high}\n\n*02 / A moment that stuck*\n${data.memorable}\n\n*03 / What I learned*\n${data.lesson}\n\n*04 / Someone to thank*\n${data.shoutoutName}\n\n*05 / Word that defined 2026*\n*${(data.wordPast || '').toUpperCase()}*\n\n*06 / My word for 2027*\n*${(data.word || '').toUpperCase()}*\n\n*07 / A note to my January 2027 self*\n>${(data.capsule || '').split('\n').join('\n>')}`;
 
   const slideMood = getSlideMood(wrappedSlide, data);
   const moodPalette = MOOD_DESIGN[slideMood] || MOOD_DESIGN.neutral;
-  const pageBg = step === 8 ? moodPalette.bg : BONE;
+  const pageBg = step === 9 ? moodPalette.bg : BONE;
 
   return (
     <div
@@ -611,29 +696,29 @@ export default function XDCooldown() {
       <style>{FONTS}</style>
       <style>{KEYFRAMES}</style>
 
-      {step < 8 && <BackgroundShapes step={step} />}
+      {step < 9 && <BackgroundShapes step={step} />}
       {confettiOn && <Confetti />}
 
       <div className="relative z-10 min-h-screen flex flex-col">
-        {step < 8 && (
+        {step < 9 && (
           <header className="px-6 pt-6 pb-5 md:px-12 md:pt-8 flex items-center justify-between relative">
             <div className="flex items-center gap-2.5">
               <div className="w-2 h-2 rounded-full" style={{ background: CORAL, animation: 'dotBlink 2.4s ease-in-out infinite' }} />
               <span className="text-[10px] uppercase tracking-[0.24em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
-                XD Cooldown · 2026
+                TY25 Reflections · 2026
               </span>
             </div>
-            {step >= 1 && step <= 7 && (
+            {step >= 1 && step <= 8 && (
               <div className="text-[10px] uppercase tracking-[0.22em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
-                {step} / 7
+                {step} / 8
               </div>
             )}
           </header>
         )}
 
-        {step >= 1 && step <= 7 && (
+        {step >= 1 && step <= 8 && (
           <div className="px-6 md:px-12 flex gap-1.5">
-            {[0, 1, 2, 3, 4, 5, 6].map(i => (
+            {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
               <div key={i} className="flex-1 h-[2px] overflow-hidden" style={{ background: '#0F0F0E14' }}>
                 <div
                   className="h-full transition-all duration-700"
@@ -657,7 +742,7 @@ export default function XDCooldown() {
                 onBack={back}
                 onNext={next}
                 canProceed={canQ}
-                isLast={step === 7}
+                isLast={step === 8}
               />
             )}
             {q && q.type === 'shoutout' && (
@@ -673,7 +758,7 @@ export default function XDCooldown() {
                 onBack={back} onNext={next} canProceed={canQ}
               />
             )}
-            {step === 8 && (
+            {step === 9 && (
               <WrappedReveal
                 slideIndex={wrappedSlide}
                 data={data}
@@ -681,22 +766,24 @@ export default function XDCooldown() {
                 palette={moodPalette}
                 mood={slideMood}
                 onAdvance={() => {
-                  if (wrappedSlide < 6) {
+                  if (wrappedSlide < 7) {
                     setWrappedSlide(i => i + 1);
                   } else {
-                    setStep(9);
+                    setStep(10);
                     setWrappedSlide(0);
                   }
                 }}
-                onBack={() => { if (wrappedSlide > 0) setWrappedSlide(i => i - 1); else setStep(7); }}
+                onBack={() => { if (wrappedSlide > 0) setWrappedSlide(i => i - 1); else setStep(8); }}
+                onSaveSlideImage={saveSlideAsImage}
+                slideCaptureStatus={slideCaptureStatus}
               />
             )}
-            {step === 9 && (
+            {step === 10 && (
               <ShareScreen
                 data={data} firstName={firstName} summary={summary}
-                slackText={slackText}
                 onCopy={handleCopy}
                 onDownloadReplay={downloadReplay}
+                onReplayWrapped={() => { setStep(9); setWrappedSlide(0); }}
                 downloaded={downloaded}
                 copied={copied}
               />
@@ -704,7 +791,7 @@ export default function XDCooldown() {
           </div>
         </main>
 
-        {step < 8 && step > 0 && (
+        {step < 9 && step > 0 && (
           <footer className="px-6 pb-8 text-center text-[10px] uppercase tracking-[0.24em]" style={{ color: MUTED, fontFamily: "'JetBrains Mono', monospace" }}>
             Your answers stay in this tab
           </footer>
@@ -721,8 +808,9 @@ function getSlideMood(slideIndex, data) {
     case 2: return detectMood(data.memorable);
     case 3: return detectMood(data.lesson);
     case 4: return 'warm';
-    case 5: return detectMood(data.word) !== 'neutral' ? detectMood(data.word) : 'growth';
-    case 6: return detectMood(data.capsule);
+    case 5: return detectMood(data.wordPast) !== 'neutral' ? detectMood(data.wordPast) : 'thoughtful';
+    case 6: return detectMood(data.word) !== 'neutral' ? detectMood(data.word) : 'growth';
+    case 7: return detectMood(data.capsule);
     default: return 'neutral';
   }
 }
@@ -734,14 +822,14 @@ function Welcome({ onStart }) {
   return (
     <div className="relative" style={{ animation: 'slamIn 700ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
       <div className="text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-10" style={{ background: INK, color: BONE, fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6" style={{ background: INK, color: BONE, fontFamily: "'JetBrains Mono', monospace", fontSize: '10px', letterSpacing: '0.22em', textTransform: 'uppercase' }}>
           <span style={{ color: CORAL }}>●</span>
-          XD Cooldown / 2026
+          TY25 Reflections
         </div>
 
-        <h1 className="text-[clamp(56px,12vw,160px)] font-extrabold leading-[0.86] tracking-[-0.04em] uppercase" style={{ fontFamily: "'Syne', sans-serif", color: INK }}>
+        <h1 className="text-[clamp(40px,7.5vw,88px)] font-extrabold leading-[0.92] tracking-[-0.035em] uppercase" style={{ fontFamily: "'Syne', sans-serif", color: INK }}>
           Tax season,
-          <br />
+          {' '}
           <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 500, textTransform: 'lowercase', letterSpacing: '-0.02em', color: CORAL }}>
             actually
           </span>
@@ -749,25 +837,29 @@ function Welcome({ onStart }) {
         </h1>
 
         <div style={{ animation: 'riseIn 700ms ease-out 250ms both', opacity: 0, animationFillMode: 'forwards' }}>
-          <p className="text-lg md:text-xl max-w-lg mx-auto mt-8 mb-10 leading-relaxed" style={{ color: SOFT_INK }}>
-            Fifteen minutes to reflect, celebrate, and leave a note for your January&nbsp;2027 self.
+          <p className="text-base md:text-lg max-w-md mx-auto mt-5 mb-3 leading-relaxed" style={{ color: SOFT_INK }}>
+            Fifteen minutes to reflect, celebrate, and write a note your future self will receive on January&nbsp;1,&nbsp;2027.
+          </p>
+
+          <p className="text-sm md:text-base max-w-md mx-auto mb-8 leading-relaxed" style={{ color: MUTED, fontFamily: "'Fraunces', serif", fontStyle: 'italic' }}>
+            Just for you. Nothing is saved or shared — your reflections live only on this page until you choose to send them to yourself.
           </p>
 
           <button
             onClick={onStart}
-            className="inline-flex items-center gap-3 px-8 py-4 font-semibold transition-all active:scale-[0.98] hover:opacity-90"
-            style={{ background: INK, color: BONE, fontFamily: "'Syne', sans-serif", fontSize: '15px', letterSpacing: '0.04em', borderRadius: '999px', textTransform: 'uppercase' }}
+            className="inline-flex items-center gap-3 px-7 py-3.5 font-semibold transition-all active:scale-[0.98] hover:opacity-90"
+            style={{ background: INK, color: BONE, fontFamily: "'Syne', sans-serif", fontSize: '14px', letterSpacing: '0.04em', borderRadius: '999px', textTransform: 'uppercase' }}
           >
             <span>Begin</span>
             <span style={{ color: CORAL }}>→</span>
           </button>
 
-          <div className="mt-10 flex items-center justify-center gap-4 text-[10px] uppercase tracking-[0.24em]" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
-            <span>6 questions</span>
+          <div className="mt-6 flex items-center justify-center gap-3 text-[10px] uppercase tracking-[0.24em]" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
+            <span>7 questions</span>
             <span style={{ color: CORAL }}>✦</span>
             <span>15 min</span>
             <span style={{ color: CORAL }}>✦</span>
-            <span>Private</span>
+            <span>Just for you</span>
           </div>
         </div>
       </div>
@@ -780,14 +872,14 @@ function NameScreen({ data, update, onBack, onNext, canProceed }) {
     <div className="relative" style={{ animation: 'slamIn 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
       <ChapterHeader chapter="00" label="Hello" />
 
-      <h2 className="text-[36px] md:text-[64px] leading-[0.95] tracking-[-0.025em] uppercase font-extrabold mb-4" style={{ fontFamily: "'Syne', sans-serif", color: INK }}>
+      <h2 className="text-[32px] md:text-[52px] leading-[0.98] tracking-[-0.025em] uppercase font-extrabold mb-4 text-center" style={{ fontFamily: "'Syne', sans-serif", color: INK }}>
         First things first{' '}
         <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontWeight: 500, textTransform: 'lowercase', letterSpacing: '-0.02em', color: CORAL }}>
           — what do we call you?
         </span>
       </h2>
 
-      <p className="text-base md:text-lg mb-10 max-w-md" style={{ color: SOFT_INK }}>
+      <p className="text-base md:text-lg mb-10 text-center max-w-md mx-auto" style={{ color: SOFT_INK }}>
         Just for your own reveal. Nothing leaves this tab.
       </p>
 
@@ -818,11 +910,11 @@ function QuestionScreen({ q, value, onChange, onBack, onNext, canProceed, isLast
     <div className="relative" style={{ animation: 'slamIn 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }} key={q.key}>
       <ChapterHeader chapter={q.chapter} label={q.label} />
 
-      <h2 className="text-[26px] md:text-[40px] leading-[1.05] tracking-[-0.015em] mb-3 font-medium" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
+      <h2 className="text-[26px] md:text-[40px] leading-[1.05] tracking-[-0.015em] mb-3 font-medium text-center" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
         {q.question}
       </h2>
 
-      <p className="text-sm md:text-base mb-8" style={{ color: SOFT_INK }}>
+      <p className="text-sm md:text-base mb-8 text-center" style={{ color: SOFT_INK }}>
         {q.helper}
       </p>
 
@@ -883,11 +975,11 @@ function CapsuleScreen({ q, value, onChange, onBack, onNext, canProceed }) {
     <div className="relative" style={{ animation: 'slamIn 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
       <ChapterHeader chapter={q.chapter} label={q.label} />
 
-      <h2 className="text-[26px] md:text-[40px] leading-[1.05] tracking-[-0.015em] mb-3 font-medium" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
+      <h2 className="text-[26px] md:text-[40px] leading-[1.05] tracking-[-0.015em] mb-3 font-medium text-center" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
         {q.question}
       </h2>
 
-      <p className="text-sm md:text-base mb-6" style={{ color: SOFT_INK }}>
+      <p className="text-sm md:text-base mb-6 text-center max-w-xl mx-auto" style={{ color: SOFT_INK }}>
         This is the heart of the exercise. In January, future-you will read this to remember how this season really felt — and to walk back in with confidence.
       </p>
 
@@ -942,15 +1034,15 @@ function ShoutoutScreen({ q, data, update, onBack, onNext, canProceed }) {
     <div className="relative" style={{ animation: 'slamIn 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
       <ChapterHeader chapter={q.chapter} label={q.label} />
 
-      <h2 className="text-[26px] md:text-[40px] leading-[1.05] tracking-[-0.015em] mb-3 font-medium" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
+      <h2 className="text-[26px] md:text-[40px] leading-[1.05] tracking-[-0.015em] mb-3 font-medium text-center" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
         {q.question}
       </h2>
 
-      <p className="text-sm md:text-base mb-8" style={{ color: SOFT_INK }}>
+      <p className="text-sm md:text-base mb-8 text-center" style={{ color: SOFT_INK }}>
         {q.helper}
       </p>
 
-      <div className="grid gap-5 md:grid-cols-2 mb-5">
+      <div className="mb-5">
         <label className="block">
           <span className="text-[10px] uppercase tracking-[0.22em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>Their name</span>
           <input
@@ -964,22 +1056,6 @@ function ShoutoutScreen({ q, data, update, onBack, onNext, canProceed }) {
               fontStyle: 'italic',
               color: INK,
               borderBottom: `2px solid ${data.shoutoutName ? CORAL : '#0F0F0E24'}`,
-              transition: 'border-color 300ms ease',
-            }}
-          />
-        </label>
-        <label className="block">
-          <span className="text-[10px] uppercase tracking-[0.22em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>Their email <span style={{ textTransform: 'none' }}>(optional)</span></span>
-          <input
-            type="email"
-            value={data.shoutoutEmail}
-            onChange={e => update('shoutoutEmail', e.target.value)}
-            placeholder="them@intuit.com"
-            className="mt-1.5 w-full text-lg md:text-xl py-2.5 bg-transparent border-0 outline-none"
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              color: INK,
-              borderBottom: `2px solid ${data.shoutoutEmail ? CORAL : '#0F0F0E24'}`,
               transition: 'border-color 300ms ease',
             }}
           />
@@ -1013,15 +1089,12 @@ function ShoutoutScreen({ q, data, update, onBack, onNext, canProceed }) {
 
 function ChapterHeader({ chapter, label }) {
   return (
-    <div className="flex items-baseline gap-4 mb-8" style={{ animation: 'chapterSlide 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
-      <span className="text-[64px] md:text-[96px] leading-none font-medium" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: CORAL }}>
-        {chapter}
-      </span>
-      <div className="flex flex-col gap-1 pb-2">
-        <span className="text-[10px] uppercase tracking-[0.28em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
-          Chapter {chapter}
+    <div className="text-center mb-7" style={{ animation: 'chapterSlide 600ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
+      <div className="inline-flex items-baseline gap-3 justify-center">
+        <span className="text-[44px] md:text-[56px] leading-none font-medium" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: CORAL }}>
+          {chapter}
         </span>
-        <span className="text-base md:text-lg font-semibold tracking-[-0.005em]" style={{ fontFamily: "'Syne', sans-serif", color: INK }}>
+        <span className="text-base md:text-lg font-semibold tracking-[-0.005em]" style={{ fontFamily: "'Syne', sans-serif", color: INK, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
           {label}
         </span>
       </div>
@@ -1062,11 +1135,11 @@ function NavButtons({ onBack, onNext, canProceed, nextLabel = 'Next' }) {
 // ============================================================
 // WRAPPED REVEAL
 // ============================================================
-function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvance, onBack }) {
+function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvance, onBack, onSaveSlideImage, slideCaptureStatus }) {
   const slides = [
     <div key="intro" className="text-center px-4">
       <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-6" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
-        XD Cooldown presents
+        TY25 Reflections presents
       </div>
       <h2 className="text-[clamp(48px,11vw,140px)] leading-[0.86] tracking-[-0.03em] uppercase font-extrabold" style={{ fontFamily: "'Syne', sans-serif", color: p.ink }}>
         {firstName}'s
@@ -1099,16 +1172,41 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
       </p>
     </div>,
 
-    <div key="word" className="text-center">
-      <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-6" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
-        Your word for 2027
+    <div key="wordPast" className="text-center">
+      <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-2" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
+        Chapter 05 · Word that defined 2026
+      </div>
+      <div className="text-base md:text-lg mb-6" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: p.ink, opacity: 0.7 }}>
+        Looking back —
       </div>
       <div
         className="font-extrabold leading-[0.86] tracking-[-0.04em] uppercase break-words"
         style={{
           fontFamily: "'Syne', sans-serif",
           color: p.accent,
-          fontSize: 'clamp(5rem, 20vw, 13rem)',
+          fontSize: 'clamp(4rem, 17vw, 11rem)',
+          animation: 'bigPop 800ms cubic-bezier(0.2, 1, 0.3, 1) 200ms both',
+          opacity: 0,
+          animationFillMode: 'forwards',
+        }}
+      >
+        {data.wordPast}
+      </div>
+    </div>,
+
+    <div key="word" className="text-center">
+      <div className="text-[11px] uppercase tracking-[0.3em] font-medium mb-2" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.meta }}>
+        Chapter 06 · Word for 2027
+      </div>
+      <div className="text-base md:text-lg mb-6" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: p.ink, opacity: 0.7 }}>
+        Looking ahead —
+      </div>
+      <div
+        className="font-extrabold leading-[0.86] tracking-[-0.04em] uppercase break-words"
+        style={{
+          fontFamily: "'Syne', sans-serif",
+          color: p.accent,
+          fontSize: 'clamp(4rem, 17vw, 11rem)',
           animation: 'bigPop 800ms cubic-bezier(0.2, 1, 0.3, 1) 200ms both',
           opacity: 0,
           animationFillMode: 'forwards',
@@ -1143,37 +1241,98 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
     </div>,
   ];
 
+  // Slide 0 is the intro — no save button there (no content worth sharing yet)
+  // Slides 1..7 = chapter slides. Most useful: slide 4 (shoutout) → share with the person.
+  const canSave = slideIndex > 0;
+  const isShoutoutSlide = slideIndex === 4;
+
   return (
-    <div className="min-h-[78vh] flex items-center justify-center cursor-pointer relative" onClick={onAdvance} style={{ userSelect: 'none' }} key={slideIndex}>
-      <MoodField palette={p} slideIndex={slideIndex} />
-      <div className="relative z-10 w-full" style={{ animation: 'fadeIn 500ms ease-out both' }}>
-        {slides[slideIndex]}
-      </div>
-      <div className="absolute top-5 left-0 right-0 px-6 md:px-12 flex items-center justify-between z-20">
-        <button
-          onClick={(e) => { e.stopPropagation(); onBack(); }}
-          className="text-[10px] uppercase tracking-[0.24em] font-medium hover:opacity-60 transition-opacity"
-          style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.7 }}
+    <>
+      {/* The actual capture target — a self-contained element with explicit background */}
+      <div
+        id="wrapped-slide-capture"
+        className="flex items-stretch cursor-pointer relative overflow-hidden"
+        onClick={onAdvance}
+        style={{ userSelect: 'none', background: p.bg }}
+        key={slideIndex}
+      >
+        <MoodField palette={p} slideIndex={slideIndex} />
+        <div
+          className="relative z-10 w-full flex items-center justify-center"
+          style={{
+            animation: 'fadeIn 500ms ease-out both',
+            minHeight: '78vh',
+            paddingTop: '72px',
+            paddingBottom: canSave ? '140px' : '60px',
+          }}
         >
-          ← Back
-        </button>
-        <div className="flex gap-1">
-          {[0,1,2,3,4,5,6].map((_, i) => (
-            <div
-              key={i}
-              className="h-[2px] transition-all duration-500"
+          <div className="w-full">
+            {slides[slideIndex]}
+          </div>
+        </div>
+
+        {/* Top bar — overlays the capture target. Hidden during capture via CSS class. */}
+        <div className="wrapped-chrome absolute top-5 left-0 right-0 px-6 md:px-12 flex items-center justify-between z-20">
+          <button
+            onClick={(e) => { e.stopPropagation(); onBack(); }}
+            className="text-[10px] uppercase tracking-[0.24em] font-medium hover:opacity-60 transition-opacity"
+            style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.7, background: 'transparent', border: 'none', cursor: 'pointer' }}
+          >
+            ← Back
+          </button>
+          <div className="flex gap-1">
+            {[0,1,2,3,4,5,6,7].map((_, i) => (
+              <div
+                key={i}
+                className="h-[2px] transition-all duration-500"
+                style={{
+                  width: i === slideIndex ? 28 : 10,
+                  background: i <= slideIndex ? p.ink : `${p.ink}30`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="text-[10px] uppercase tracking-[0.24em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.7 }}>
+            {slideIndex + 1} / 8
+          </div>
+        </div>
+
+        {/* Bottom bar — hint + Save button stacked. Outside the capture via wrapped-chrome class. */}
+        {canSave && (
+          <div className="wrapped-chrome absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center gap-2.5 z-20 px-6 pb-6 pt-4" style={{ background: `linear-gradient(to top, ${p.bg} 60%, ${p.bg}00)` }}>
+            {isShoutoutSlide && slideCaptureStatus === 'idle' && data.shoutoutName && (
+              <div className="text-[10px] uppercase tracking-[0.26em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.6 }}>
+                Send this to {data.shoutoutName.split(' ')[0]} in Slack ↓
+              </div>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onSaveSlideImage(slideIndex); }}
+              disabled={slideCaptureStatus === 'loading'}
+              className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold uppercase transition-all hover:scale-[1.03] active:scale-95 disabled:opacity-50"
               style={{
-                width: i === slideIndex ? 28 : 10,
-                background: i <= slideIndex ? p.ink : `${p.ink}30`,
+                background: p.ink,
+                color: p.bg,
+                fontFamily: "'Syne', sans-serif",
+                fontSize: '11px',
+                letterSpacing: '0.08em',
+                borderRadius: '999px',
+                border: 'none',
+                cursor: slideCaptureStatus === 'loading' ? 'wait' : 'pointer',
+                boxShadow: `0 2px 12px ${p.ink}30`,
               }}
-            />
-          ))}
-        </div>
-        <div className="text-[10px] uppercase tracking-[0.24em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.7 }}>
-          {slideIndex + 1} / 7
-        </div>
+            >
+              <span>
+                {slideCaptureStatus === 'loading' ? 'Capturing…' :
+                 slideCaptureStatus === 'done' ? 'Saved ✓' :
+                 slideCaptureStatus === 'failed' ? 'Try again' :
+                 isShoutoutSlide ? 'Save to share with them' : 'Save as image'}
+              </span>
+              <span style={{ color: p.accent }}>↓</span>
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -1260,13 +1419,9 @@ function MoodField({ palette, slideIndex }) {
 // ============================================================
 // SHARE SCREEN — restructured around download → attach → delay-send
 // ============================================================
-function ShareScreen({ data, firstName, summary, slackText, onCopy, onDownloadReplay, downloaded, copied }) {
-  const suggestedSubject = `Open January 1, 2027 — My XD Cooldown ✦`;
+function ShareScreen({ data, firstName, summary, onCopy, onDownloadReplay, onReplayWrapped, downloaded, copied }) {
+  const suggestedSubject = `Open January 1, 2027 — My TY25 Reflections ✦`;
   const subjectMailto = `mailto:?subject=${encodeURIComponent(suggestedSubject)}`;
-  const mvpNote = data.shoutoutName
-    ? `Hi ${data.shoutoutName.split(' ')[0]},\n\n"${data.shoutoutMessage}"\n\nThanks for making this season better.\n\n— ${firstName}`
-    : '';
-
   return (
     <div style={{ animation: 'slamIn 700ms cubic-bezier(0.2, 0.9, 0.3, 1) both' }}>
       <div className="text-center mb-10">
@@ -1297,7 +1452,7 @@ function ShareScreen({ data, firstName, summary, slackText, onCopy, onDownloadRe
         <div className="flex items-center gap-2 mb-6">
           <span style={{ color: CORAL, fontSize: 10 }}>●</span>
           <span className="text-[10px] uppercase tracking-[0.28em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: INK }}>
-            XD Cooldown · Tax Season 2026
+            TY25 Reflections · Tax Season 2026
           </span>
         </div>
 
@@ -1313,6 +1468,15 @@ function ShareScreen({ data, firstName, summary, slackText, onCopy, onDownloadRe
           <SumRow chapter="04" label="Someone to thank" value={data.shoutoutName} />
           <SumRow
             chapter="05"
+            label="Word that defined 2026"
+            value={
+              <span style={{ fontSize: '1.6rem', fontFamily: "'Syne', sans-serif", fontWeight: 800, textTransform: 'uppercase', color: INK, letterSpacing: '-0.02em', lineHeight: 1 }}>
+                {data.wordPast}
+              </span>
+            }
+          />
+          <SumRow
+            chapter="06"
             label="Word for 2027"
             value={
               <span style={{ fontSize: '2rem', fontFamily: "'Syne', sans-serif", fontWeight: 800, textTransform: 'uppercase', color: CORAL, letterSpacing: '-0.02em', lineHeight: 1 }}>
@@ -1324,7 +1488,7 @@ function ShareScreen({ data, firstName, summary, slackText, onCopy, onDownloadRe
 
         <div className="mt-8 pt-6" style={{ borderTop: `1px dashed ${INK}30` }}>
           <div className="flex items-baseline gap-3 mb-3">
-            <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: CORAL, fontSize: 28, fontWeight: 500 }}>06</span>
+            <span style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: CORAL, fontSize: 28, fontWeight: 500 }}>07</span>
             <span className="text-[10px] uppercase tracking-[0.22em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
               For January 2027
             </span>
@@ -1333,6 +1497,23 @@ function ShareScreen({ data, firstName, summary, slackText, onCopy, onDownloadRe
             {data.capsule}
           </p>
         </div>
+      </div>
+
+      {/* SECTION — Tip about replaying for slide images */}
+      <div className="mb-10 p-5 md:p-6" style={{ background: BONE, border: `1.5px dashed ${INK}30`, borderRadius: '6px' }}>
+        <div className="text-[10px] uppercase tracking-[0.26em] font-medium mb-2" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
+          Want to share a specific moment?
+        </div>
+        <p className="text-sm md:text-base leading-relaxed" style={{ color: SOFT_INK, fontFamily: "'Fraunces', serif", fontStyle: 'italic' }}>
+          Each slide in your reveal{data.shoutoutName ? <> — including your shoutout to <strong style={{ fontStyle: 'normal', fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{data.shoutoutName}</strong></> : ''} — has its own "Save as image" button. Replay the wrapped, save the slides you want, then drop them into Slack.
+        </p>
+        <button
+          onClick={onReplayWrapped}
+          className="mt-4 text-[11px] uppercase tracking-[0.22em] font-medium hover:opacity-60 transition-opacity"
+          style={{ fontFamily: "'JetBrains Mono', monospace", color: INK, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+        >
+          ↻ Replay wrapped
+        </button>
       </div>
 
       {/* SECTION — Send it to future you */}
@@ -1454,65 +1635,7 @@ function ShareScreen({ data, firstName, summary, slackText, onCopy, onDownloadRe
         </div>
       </div>
 
-      {/* SECTION — Quick copies (secondary) */}
-      <div className="mb-10">
-        <div className="text-[10px] uppercase tracking-[0.26em] font-medium mb-4" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
-          Or keep it somewhere
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <ActionButton
-            onClick={() => onCopy(summary, 'summary')}
-            label={copied === 'summary' ? 'Copied ✓' : copied === 'failed' ? 'Try again' : 'Copy as text'}
-            active={copied === 'summary'}
-          />
-          <ActionButton
-            onClick={() => onCopy(slackText, 'slack')}
-            label={copied === 'slack' ? 'Copied ✓' : 'Copy for Slack'}
-            active={copied === 'slack'}
-          />
-        </div>
-      </div>
 
-      {/* SECTION — MVP (copy-based, no mailto) */}
-      {data.shoutoutName && (
-        <div className="p-6 md:p-7" style={{ background: BONE, border: `1.5px solid ${INK}`, borderRadius: '6px' }}>
-          <div className="text-[10px] uppercase tracking-[0.24em] font-medium mb-3" style={{ fontFamily: "'JetBrains Mono', monospace", color: MUTED }}>
-            Send your note to {data.shoutoutName.split(' ')[0]}
-          </div>
-          <div className="text-lg md:text-xl mb-5 font-medium leading-snug" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
-            Copy the note below, then paste it into a fresh email{data.shoutoutEmail ? <> to <span style={{ fontFamily: "'JetBrains Mono', monospace", fontStyle: 'normal', fontSize: '0.85em', background: '#0F0F0E10', padding: '1px 6px', borderRadius: 3 }}>{data.shoutoutEmail}</span></> : ''}.
-          </div>
-
-          <div className="p-4 mb-4" style={{ background: '#FFFFFF', border: `1px dashed ${INK}40`, borderRadius: '6px' }}>
-            <p className="whitespace-pre-wrap text-base leading-relaxed" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: INK }}>
-              {mvpNote}
-            </p>
-          </div>
-
-          <button
-            onClick={() => onCopy(mvpNote, 'mvp')}
-            className="inline-flex items-center gap-2 px-6 py-3 font-semibold uppercase transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{
-              background: INK,
-              color: copied === 'mvp' ? LEMON : BONE,
-              fontFamily: "'Syne', sans-serif",
-              fontSize: '13px',
-              letterSpacing: '0.05em',
-              borderRadius: '999px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <span>{copied === 'mvp' ? 'Copied ✓' : 'Copy the note'}</span>
-            <span style={{ color: CORAL }}>→</span>
-          </button>
-          {!data.shoutoutEmail && (
-            <p className="mt-3 text-[12px]" style={{ color: SOFT_INK, fontFamily: "'DM Sans', sans-serif" }}>
-              No email saved — look them up in your address book.
-            </p>
-          )}
-        </div>
-      )}
 
       <div className="mt-12 text-center">
         <button
@@ -1657,7 +1780,7 @@ function Confetti() {
 
 function buildSummary(d, firstName) {
   const line = '─────────────────────────────────────';
-  return `XD COOLDOWN — ${firstName.toUpperCase()}'S TAX SEASON 2026, WRAPPED
+  return `TY25 REFLECTIONS — ${firstName.toUpperCase()}'S TAX SEASON 2026, WRAPPED
 ${line}
 For: future ${firstName}, January 1, 2027
 
@@ -1679,15 +1802,19 @@ ${d.shoutoutName}
 "${d.shoutoutMessage}"
 
 
-05 / MY WORD FOR 2027
+05 / WORD THAT DEFINED 2026
+${(d.wordPast || '').toUpperCase()}
+
+
+06 / MY WORD FOR 2027
 ${(d.word || '').toUpperCase()}
 
 
-06 / A LETTER TO JANUARY 2027 ME
+07 / A LETTER TO JANUARY 2027 ME
 ${d.capsule}
 
 
 ${line}
-Sealed at the XD Cooldown, end of tax season 2026.
+Sealed in TY25 Reflections, end of tax season 2026.
 `;
 }
