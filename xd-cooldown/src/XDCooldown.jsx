@@ -1254,7 +1254,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
         <p className="text-lg md:text-xl leading-relaxed whitespace-pre-wrap" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', color: p.bg === INK || p.bg === '#141828' ? BONE : INK }}>
           {data.capsule}
         </p>
-        <div className="mt-6 pt-5 text-xs uppercase tracking-[0.22em]" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.accent, borderTop: `1px dashed ${p.ink}30` }}>
+        <div className="mt-6 pt-5 text-xs uppercase tracking-[0.22em]" style={{ fontFamily: "'JetBrains Mono', monospace", color: (p.bg === INK || p.bg === '#141828') ? p.accent : p.meta, borderTop: `1px dashed ${(p.bg === INK || p.bg === '#141828') ? p.ink : INK}30` }}>
           — {firstName}, end of tax season 2026
         </div>
       </div>
@@ -1295,8 +1295,8 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
         <div className="wrapped-chrome absolute top-5 left-0 right-0 px-6 md:px-12 flex items-center justify-between z-20">
           <button
             onClick={(e) => { e.stopPropagation(); onBack(); }}
-            className="text-[10px] uppercase tracking-[0.24em] font-medium hover:opacity-60 transition-opacity"
-            style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.7, background: 'transparent', border: 'none', cursor: 'pointer' }}
+            className="text-[10px] uppercase tracking-[0.24em] font-medium hover:opacity-100 transition-opacity"
+            style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.9, background: 'transparent', border: 'none', cursor: 'pointer' }}
           >
             ← Back
           </button>
@@ -1307,21 +1307,30 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
                 className="h-[2px] transition-all duration-500"
                 style={{
                   width: i === slideIndex ? 28 : 10,
-                  background: i <= slideIndex ? p.ink : `${p.ink}30`,
+                  background: i <= slideIndex ? p.ink : `${p.ink}55`,
                 }}
               />
             ))}
           </div>
-          <div className="text-[10px] uppercase tracking-[0.24em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.7 }}>
+          <div className="text-[10px] uppercase tracking-[0.24em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.9 }}>
             {slideIndex + 1} / 8
           </div>
         </div>
 
-        {/* Bottom bar — hint + Save button stacked. Outside the capture via wrapped-chrome class. */}
+        {/* Bottom bar — hint + Save button stacked. Outside the capture via wrapped-chrome class.
+            Centered with left-1/2 + translate-x for bulletproof alignment. */}
         {canSave && (
-          <div className="wrapped-chrome absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center gap-2.5 z-20 px-6 pb-6 pt-4" style={{ background: `linear-gradient(to top, ${p.bg} 60%, ${p.bg}00)` }}>
+          <div
+            className="wrapped-chrome absolute bottom-0 z-20 flex flex-col items-center justify-center gap-2.5 pb-6 pt-8 px-6"
+            style={{
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'min(520px, calc(100% - 48px))',
+              textAlign: 'center',
+            }}
+          >
             {isShoutoutSlide && slideCaptureStatus === 'idle' && data.shoutoutName && (
-              <div className="text-[10px] uppercase tracking-[0.26em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.6 }}>
+              <div className="text-[10px] uppercase tracking-[0.26em] font-medium" style={{ fontFamily: "'JetBrains Mono', monospace", color: p.ink, opacity: 0.75 }}>
                 Send this to {data.shoutoutName.split(' ')[0]} in Slack ↓
               </div>
             )}
@@ -1338,7 +1347,7 @@ function WrappedReveal({ slideIndex, data, firstName, palette: p, mood, onAdvanc
                 borderRadius: '999px',
                 border: 'none',
                 cursor: slideCaptureStatus === 'loading' ? 'wait' : 'pointer',
-                boxShadow: `0 2px 12px ${p.ink}30`,
+                boxShadow: `0 2px 12px ${p.ink}40`,
               }}
             >
               <span>
